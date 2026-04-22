@@ -1,0 +1,6 @@
+{
+  "name": "Diagnostic Cyber ACADEE",
+  "description": "Outil MVP de diagnostic cybersécurité pour TPE/PME générant un rapport par IA en session locale.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
