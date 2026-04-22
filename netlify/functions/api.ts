@@ -271,10 +271,20 @@ Chaque tableau, chaque domaine, et chaque plan d'action doit être détaillé et
       }
     });
 
-    const text = response.text;
+    let text = response.text;
     if (!text) throw new Error("La réponse de l'IA est vide.");
 
-    const data = JSON.parse(text);
+    // Nettoyer les éventuels blocs markdown ```json ... ```
+    text = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON Parse Error. Raw text:", text.substring(0, 200) + '...');
+      throw new Error("L'IA a généré une réponse mal formatée. Veuillez réessayer.");
+    }
+
     res.json(data);
   } catch (error: any) {
     console.error(error);

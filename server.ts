@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -17,6 +18,7 @@ async function startServer() {
   app.get('/api/check', async (req, res) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY;
+      console.log("SERVER CHECK ROUTE: Key length is:", apiKey?.length, "starts with:", apiKey?.substring(0, 5));
       if (!apiKey) {
         return res.status(500).json({ ok: false, message: 'Clé API manquante' });
       }
@@ -25,7 +27,7 @@ async function startServer() {
       const ai = new GoogleGenAI({ 
         apiKey,
         httpOptions: {
-          headers: { 'Origin': allowedOrigin }
+          headers: { 'referer': "https://cyberdiag-pn10.netlify.app/" }
         }
       });
       
@@ -35,9 +37,10 @@ async function startServer() {
         config: { maxOutputTokens: 1 }
       });
       res.json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ ok: false });
+    } catch (e: any) {
+      const dbgKey = process.env.GEMINI_API_KEY || '';
+      console.error('API Check Error:', e.message);
+      res.status(500).json({ ok: false, error: e.message, keyLength: dbgKey.length, keyStart: dbgKey.substring(0, 5) });
     }
   });
 
@@ -48,12 +51,12 @@ async function startServer() {
         return res.status(500).json({ error: "Clé API Gemini manquante. Veuillez vérifier les paramètres." });
       }
 
-      // Force allowed origin
-      const allowedOrigin = 'https://cyberdiag-pn10.netlify.app';
       const ai = new GoogleGenAI({ 
         apiKey,
         httpOptions: {
-          headers: { 'Origin': allowedOrigin }
+            headers: {
+                'referer': 'https://cyberdiag-pn10.netlify.app/'
+            }
         }
       });
       const { clientData, answers } = req.body;
@@ -282,10 +285,20 @@ Chaque tableau, chaque domaine, et chaque plan d'action doit être détaillé et
         }
       });
 
-      const text = response.text;
+      let text = response.text;
       if (!text) throw new Error("La réponse de l'IA est vide.");
 
-      const data = JSON.parse(text);
+      // Nettoyer les éventuels blocs markdown ```json ... ```
+      text = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error("JSON Parse Error. Raw text:", text.substring(0, 200) + '...');
+        throw new Error("L'IA a généré une réponse mal formatée. Veuillez réessayer.");
+      }
+      
       res.json(data);
     } catch (error: any) {
       console.error(error);
