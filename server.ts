@@ -21,11 +21,11 @@ async function startServer() {
         return res.status(500).json({ ok: false, message: 'Clé API manquante' });
       }
       
-      const origin = req.headers.origin || req.headers.referer || 'https://diagnostic-cyber-acadee-444403853760.us-west1.run.app';
+      const allowedOrigin = 'https://cyberdiag-pn10.netlify.app';
       const ai = new GoogleGenAI({ 
         apiKey,
         httpOptions: {
-          headers: { 'Origin': Array.isArray(origin) ? origin[0] : origin }
+          headers: { 'Origin': allowedOrigin }
         }
       });
       
@@ -48,11 +48,12 @@ async function startServer() {
         return res.status(500).json({ error: "Clé API Gemini manquante. Veuillez vérifier les paramètres." });
       }
 
-      const origin = req.headers.origin || req.headers.referer || 'https://diagnostic-cyber-acadee-444403853760.us-west1.run.app';
+      // Force allowed origin
+      const allowedOrigin = 'https://cyberdiag-pn10.netlify.app';
       const ai = new GoogleGenAI({ 
         apiKey,
         httpOptions: {
-          headers: { 'Origin': Array.isArray(origin) ? origin[0] : origin }
+          headers: { 'Origin': allowedOrigin }
         }
       });
       const { clientData, answers } = req.body;
