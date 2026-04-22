@@ -42,22 +42,32 @@ function App() {
     }));
   };
 
-  const handleStartAnalysis = async () => {
-    setStep('analyzing');
+  const handleGoToSummary = () => {
+    setStep('summary');
+    console.log("[Etape] Navigation vers le Récapitulatif avant analyse");
+    console.log("[Etape] Déclenchement du Webhook Make.com...");
     
-    // Webhook Make.com non-bloquant
+    // Webhook Make.com non-bloquant (lancé à l'affichage du récapitulatif)
     fetch('https://hook.eu1.make.com/edmr3sl14oxf6776rufg4t9b5y8u48mr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(clientData)
-    }).catch(e => console.error("Erreur d'envoi webhook", e));
+      body: JSON.stringify({ clientData, answers })
+    })
+    .then(res => console.log("[Webhook] Configuration envoyée, status HTTP:", res.status))
+    .catch(e => console.error("[Webhook] Erreur d'envoi webhook:", e));
+  };
+
+  const handleStartAnalysis = async () => {
+    setStep('analyzing');
+    console.log("[Etape] Démarrage de l'analyse IA (App.tsx)...");
 
     try {
       const data = await analyzeDiagnostic(clientData, answers);
+      console.log("[Etape] Rapport généré avec succès. Passage au Dashboard.");
       setReportData(data);
       setStep('report');
     } catch (error: any) {
-      console.error(error);
+      console.error("[Analyse - ERREUR GLOBALE]", error);
       alert(`Une erreur est survenue lors de l'analyse IA: ${error.message}`);
       setStep('summary'); // go back on error
     }
@@ -134,7 +144,7 @@ function App() {
             <DiagnosticForm 
               answers={answers} 
               onUpdateAnswer={handleUpdateAnswer}
-              onComplete={() => setStep('summary')}
+              onComplete={handleGoToSummary}
             />
           )}
           
